@@ -5,7 +5,9 @@
 #include "logging.h"
 
 import lsplant;
+#ifdef USE_LSPARSELF
 import lsparself;
+#endif
 
 #define _uintval(p)               reinterpret_cast<uintptr_t>(p)
 #define _ptr(p)                   reinterpret_cast<void *>(p)
@@ -58,7 +60,9 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (vm->GetEnv((void**) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
+    #ifdef USE_LSPARSELF
     lsparself::Elf art("/libart.so");
+    #endif
     lsplant::InitInfo initInfo{
             .inline_hooker = InlineHooker,
             .inline_unhooker = InlineUnhooker,
