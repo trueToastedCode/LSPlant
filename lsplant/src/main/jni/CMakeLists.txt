@@ -26,6 +26,12 @@ add_subdirectory(external/dex_builder)
 
 option(LSPLANT_BUILD_SHARED "If ON, lsplant will also build shared library" ON)
 
+if (NOT DEFINED DEBUG_SYMBOLS_PATH)
+    set(DEBUG_SYMBOLS_PATH ${CMAKE_BINARY_DIR}/symbols)
+endif()
+
+file(MAKE_DIRECTORY ${DEBUG_SYMBOLS_PATH})
+
 if (LSPLANT_BUILD_SHARED)
     message(STATUS "Building lsplant as a shared library")
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
@@ -37,10 +43,12 @@ if (LSPLANT_BUILD_SHARED)
     target_compile_options(${PROJECT_NAME} PRIVATE -flto)
     target_link_options(${PROJECT_NAME} PRIVATE -flto)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${DEBUG_SYMBOLS_PATH}/${ANDROID_ABI}
-            COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${PROJECT_NAME}>
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${DEBUG_SYMBOLS_PATH}/${ANDROID_ABI}
+        COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${PROJECT_NAME}>
             ${DEBUG_SYMBOLS_PATH}/${ANDROID_ABI}/${PROJECT_NAME}
-            COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:${PROJECT_NAME}>)
+        COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:${PROJECT_NAME}>
+        COMMENT "Generating debug symbols for ${PROJECT_NAME}"
+    )
 
     target_link_libraries(${PROJECT_NAME} PRIVATE dex_builder_static)
     target_link_libraries(${PROJECT_NAME} PUBLIC log)
@@ -52,10 +60,6 @@ target_sources(${PROJECT_NAME}_static PRIVATE FILE_SET ms TYPE CXX_MODULES FILES
 target_sources(${PROJECT_NAME}_static PUBLIC FILE_SET CXX_MODULES FILES ${MODULE_INTERFACES})
 target_include_directories(${PROJECT_NAME}_static PUBLIC include)
 target_include_directories(${PROJECT_NAME}_static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-
-if (NOT DEFINED DEBUG_SYMBOLS_PATH)
-    set(DEBUG_SYMBOLS_PATH ${CMAKE_BINARY_DIR}/symbols)
-endif()
 
 target_link_libraries(${PROJECT_NAME}_static PRIVATE dex_builder_static)
 target_link_libraries(${PROJECT_NAME}_static PUBLIC log)
